@@ -11,3 +11,11 @@
    #+BEGIN_SRC sh :eval never
      pip install https://www.github.com/aksarkar/poisbeta#egg=poisbeta
    #+END_SRC
+
+** References
+
+   - Peccoud and Ycart, "Markovian Modelling of Gene Synthesis" (1995)
+   - Raj et al. "Stochastic mRNA Synthesis in Mammalian Cells" (2006)
+   - Kim and Marioni, "Inferring the kinetics of stochastic gene expression
+     from single-cell RNA-sequencing data" (2013)
+   - Larsson et al. "Genomic encoding of transcriptional burst kinetics" (2019)
