@@ -1,4 +1,5 @@
 import numpy as np
+import poisbeta
 import scipy.special as sp
 import scipy.stats as st
 
@@ -23,21 +24,17 @@ def slice_sample(f, init, width=0.1, max_steps=100, bounds=None, **kwargs):
   left_steps = int(np.random.uniform() * max_steps)
   for _ in range(left_steps):
     if left < bounds[0] or z < f(left, **kwargs):
-      left = np.clip(left, *bounds)
       break
-    assert bounds[0] <= left <= bounds[1]
     left -= width
-  assert bounds[0] <= left <= bounds[1]
+  left = np.clip(left, *bounds)
   for _ in range(max_steps - left_steps):
     if right > bounds[1] or z < f(right, **kwargs):
-      right = np.clip(right, *bounds)
       break
     right += width
-  assert bounds[0] <= right <= bounds[1]
+  right = np.clip(right, *bounds)
   # Step in
   while right > left:
     proposal = left + np.random.uniform() * (right - left)
-    assert bounds[0] <= proposal <= bounds[1]
     if z < f(proposal, **kwargs):
       return proposal
     elif proposal < init:
@@ -63,7 +60,7 @@ def _cond_logpdf_koff(koff, p, kon, aoff, boff):
   return (koff * _safe_log(1 - p) + (aoff - 1) * _safe_log(koff)
           - boff * koff - sp.gammaln(koff) + sp.gammaln(kon + koff)).sum()
 
-def fit_poisson_beta_mcmc(x, n_samples, ar, br, aon, bon, aoff, boff, max_steps=100, verbose=False):
+def fit_poisson_beta_mcmc(x, n_samples, ar, br, aon, bon, aoff, boff, max_steps=100, verbose=False, trace=False):
   """Return samples from the posterior p(kon, koff, kr | x)
 
   x - counts (n,)
@@ -79,12 +76,16 @@ def fit_poisson_beta_mcmc(x, n_samples, ar, br, aon, bon, aoff, boff, max_steps=
   Fr = st.gamma(a=ar, scale=1 / br)
   Fon = st.gamma(a=aon, scale=1 / bon)
   Foff = st.gamma(a=aoff, scale=1 / boff)
-  # Draw initial sample from the prior
-  kr = Fr.rvs(size=1)
-  kon = Fon.rvs(size=1)
-  koff = Foff.rvs(size=1)
-  p = st.beta(a=kon, b=koff).rvs(size=x.shape)
+  # Initialize at the moment estimate
+  try:
+    kr, kon, koff = np.exp(poisbeta.fit_poisson_beta_moment(x))
+  except:
+    kr = Fr.rvs(size=1)
+    kon = Fon.rvs(size=1)
+    koff = Foff.rvs(size=1)
+  p = np.full(x.shape, 0.5)
   samples = []
+  log_joint_trace = []
   for t in range(n_samples):
     samples.append((kr, kon, koff))
     for i in range(x.shape[0]):
@@ -92,12 +93,14 @@ def fit_poisson_beta_mcmc(x, n_samples, ar, br, aon, bon, aoff, boff, max_steps=
     kr = slice_sample(_cond_logpdf_kr, init=kr, x=x, p=p, ar=ar, br=br, bounds=[1e-8, np.inf])
     kon = slice_sample(_cond_logpdf_kon, init=kon, p=p, koff=koff, aon=aon, bon=bon, bounds=[1e-8, np.inf])
     koff = slice_sample(_cond_logpdf_koff, init=koff, p=p, kon=kon, aoff=aoff, boff=boff, bounds=[1e-8, np.inf])
-    if verbose:
-      # TODO: this blows up for p = 0 and p = 1
+    if trace or verbose:
       log_joint = (st.poisson(mu=kr * p).logpmf(x).sum()
                    + st.beta(a=kon, b=koff).logpdf(p).sum()
                    + Fr.logpdf(kr)
                    + Fon.logpdf(kon)
                    + Foff.logpdf(koff))
-      print(f'sample {t}: {log_joint}')
-  return np.array(samples).reshape(-1, 3)
+      if trace:
+        log_joint_trace.append(log_joint)
+      if verbose:
+        print(f'sample {t}: {log_joint}')
+  return np.array(samples).reshape(-1, 3), log_joint_trace

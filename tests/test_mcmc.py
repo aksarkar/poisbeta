@@ -32,15 +32,13 @@ def test__conf_logpdf_koff():
   f = poisbeta.mcmc._cond_logpdf_koff(koff=grid, p=.5, kon=.5, aoff=1, boff=100)
   assert np.isfinite(f).all()
 
-@pytest.mark.xfail
 def test_fit_pois_beta_mcmc_one_sample(simulate_easy):
   x, *theta = simulate_easy
-  samples = poisbeta.mcmc.fit_poisson_beta_mcmc(x, n_samples=1, ar=x.max(), br=x.max(), aon=1, bon=100, aoff=1, boff=100)
+  samples = poisbeta.mcmc.fit_poisson_beta_mcmc(x, n_samples=1, ar=1, br=x.max(), aon=1, bon=100, aoff=1, boff=100)
   assert samples.shape == (1, 3)
 
-@pytest.mark.xfail
 def test_fit_pois_beta_mcmc_n_samples(simulate_easy):
   x, *theta = simulate_easy
   n_samples = 2
-  samples = poisbeta.mcmc.fit_poisson_beta_mcmc(x, n_samples=n_samples, ar=x.max(), br=x.max(), aon=1, bon=100, aoff=1, boff=100)
+  samples = poisbeta.mcmc.fit_poisson_beta_mcmc(x, n_samples=n_samples, ar=1, br=x.max(), aon=1, bon=100, aoff=1, boff=100)
   assert samples.shape == (n_samples, 3)
