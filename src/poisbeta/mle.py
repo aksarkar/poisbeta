@@ -1,4 +1,6 @@
+import poisbeta
 import numpy as np
+import scipy.optimize as so
 import scipy.special as sp
 import scipy.stats as st
 
@@ -36,7 +38,7 @@ def fit_poisson_beta_mle(x, s=None, init=None, max_iters=1000, n_points=50):
   """
   if init is None:
     try:
-      init = fit_poisson_beta_moment(x)
+      init = poisbeta.fit_poisson_beta_moment(x)
     except RuntimeError:
       init = np.zeros(3)
   if s is None:
