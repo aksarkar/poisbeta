@@ -1,0 +1,13 @@
+* Inference algorithms for the Poisson-Beta Model
+
+  One idealized model for transcriptional regulation is the /telegraph model/
+  (Peccoud and Ycart 1995, Raj et al. 2006, Kim and Marioni 2013, Munsky et
+  al. 2013), whose steady state is described by the Poisson-Beta model. Here,
+  we provide a single package implementing both previously proposed and novel
+  estimation procedures for this model.
+
+** Installation
+
+   #+BEGIN_SRC sh :eval never
+     pip install https://www.github.com/aksarkar/poisbeta#egg=poisbeta
+   #+END_SRC
